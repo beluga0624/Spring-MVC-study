@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="org.fintech.mapper.BoardMapper">
+	
+	<!-- 자주 사용하는 쿼리를 <sql>태그로 지정 -->
+	<sql id="criteria">
+		<!-- 
+			prefixOverrides : 실행될 쿼리문장의 <trim>문 안의 쿼리를 실행시
+			 				  OR로 시작하면 삭제처리
+			 				  
+			첫번째 trim prefix ({2번쨰 trim prefix} or {prefixOverrides 로 인해 처음의 or는 삭제} 
+							   쿼리문1 {2번쨰 trim prefix} or 쿼리문2 {첫번째 쿼리문 suffix} ) and      
+		-->
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+   			<foreach item="type" collection="typeArr">
+   				<trim prefix="OR">
+   					<choose>
+   						<when test="type == 'T'.toString()">
+   							upper(title) like upper('%'||#{keyword}||'%')
+   						</when>
+   						<when test="type == 'C'.toString()">
+   							upper(content) like upper('%'||#{keyword}||'%')
+   						</when>
+   						<when test="type == 'W'.toString()">
+   							upper(writer) like upper('%'||#{keyword}||'%')
+   						</when>
+   					</choose>
+   				</trim>
+   			</foreach>
+   		</trim>
+	</sql>
+	
+  	<!-- 
+  		id 값은 BoardMapper.java 클래스의 메서드 이름과 동일해야한다
+  		resultType : select문을 수행하여 가져오는 데이터의 자료 형태를 지정하는 속성
+  		<![CDATA[ ]]> : < > || && 표기를 태그로 인식하지 못하게 하는 표시 
+  	-->
+  	<select id="getList" resultType="org.fintech.domain.BoardVO">
+  		<![CDATA[select * from tbl_board where bno > 0]]>
+  	</select>
+  	
+  	<insert id="insert">
+  		insert into tbl_board (bno, title, content, writer)
+  			values (seq_board.nextval, #{title}, #{content}, #{writer})
+  	</insert>
+  	
+  	<insert id="insertSelectKey">
+  		<selectKey keyProperty="bno" order="BEFORE" resultType="long">
+  			select seq_board.nextval from dual
+  		</selectKey>
+  		insert into tbl_board (bno, title, content, writer)
+  			values (#{bno}, #{title}, #{content}, #{writer})
+   	</insert>
+   	
+   	<select id="read" resultType="org.fintech.domain.BoardVO">
+   		select * from tbl_board where bno = #{bno}
+   	</select>
+   	
+   	<delete id="delete">
+   		delete from tbl_board where bno = #{bno}
+   	</delete>
+   	
+   	<update id="update">
+   		update tbl_board
+   		set title = #{title},
+   		content = #{content},
+   		writer = #{writer},
+   		updateDate = sysdate
+   		where bno = #{bno}
+   	</update>
+   	
+   	<select id="getListWithPaging" resultType="org.fintech.domain.BoardVO">
+   		<![CDATA[
+   			select bno, 
+   					title, 
+   					content, 
+   					writer, 
+   					regdate, 
+   					updatedate,
+   					replycnt
+   			from (select /*+INDEX_DESC(tbl_board pk_board) */
+   							rownum rn, 
+   							bno, 
+   							title, 
+   							content, 
+   							writer, 
+   							regdate, 
+   							updatedate,
+   							replycnt
+   					from tbl_board
+   					where
+   		]]>
+   		<!-- <sql> 태그로 지정된 sql문장을 불러오기위해 선언 -->
+   		<include refid="criteria"/>
+   		
+   		<![CDATA[
+   					rownum <= #{pageNum} * #{amount})
+   			where rn > (#{pageNum} -1) * #{amount}
+   		]]>
+
+   	</select>
+   	
+   	<!-- 게시물 총개수 가져오기 -->
+   	<select id="getTotalCount" resultType="int">
+   		<![CDATA[
+	   		select count(*) 
+	   		from tbl_board 
+	   		where 
+   		]]>
+   		
+   		<include refid="criteria"/>
+   		
+   		<![CDATA[
+   			bno > 0
+   		]]>
+   	</select>
+   	
+   	<update id="updateReplyCnt">
+   		update tbl_board set replycnt = replycnt + #{amount} where bno = #{bno}
+   	</update>
+   	
+  </mapper>

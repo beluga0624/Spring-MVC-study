@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="org.fintech.mapper.MemberMapper">
+  	<!-- 
+  		<resultMap>
+  		클래스의 필드와 테이블 컬럼을 매칭해주는 태그로 id는 기본키에 대한 매칭부분이고 
+  		<result> 태그는 나머지 칼럽에 대한 매칭부분을 설정하는 것 property는 클래스의 
+  		필드명을 선언하고 column은 테이블의 컬럼명을 선언하면 두개가 매칭되어 정리된다.
+  	-->
+  	<resultMap type="org.fintech.domain.MemberVO" id="memberMap">
+  	
+  		<id property="userid" column="userid" />
+  		<result property="userid" column="userid" />
+  		<result property="userpw" column="userpw" />
+  		<result property="userName" column="userName" />
+  		<result property="regDate" column="regdate" />
+  		<result property="updateDate" column="updatedate" />
+  		<collection property="authList" resultMap="authMap" >
+  		</collection>
+  	
+  	</resultMap>
+  	
+  	<resultMap type="org.fintech.domain.AuthVO" id="authMap">
+  	
+  		<result property="userid" column="userid"/>
+  		<result property="auth" column="auth"/>
+  	
+  	</resultMap>
+  	
+  	<select id="read" resultMap="memberMap">
+  		select mem.userid, userpw, username, enabled, regdate, updatedate, auth 
+  		from tbl_member mem LEFT OUTER JOIN tbl_member_auth auth on mem.userid = auth.userid
+  		where mem.userid = #{userid}
+  	</select>
+  	
+  	
+  	
+  	
+  </mapper>
